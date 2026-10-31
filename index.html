@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>html{color-scheme:light dark}body{margin:0;font-family:system-ui,sans-serif;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Ore Manu</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: una colonna centrata (max 760px); riepilogo in alto, calendario lun-ven sotto, impostazioni ripiegate in fondo. */
+:root {
+  --bg: #F3F4F6;
+  --surface: #FFFFFF;
+  --fg: #1B1F26;
+  --muted: #5F6775;
+  --line: #D8DCE3;
+  --mia: #1E6E8A;
+  --mia-bg: #E1F0F6;
+  --gio: #8B3A6B;
+  --gio-bg: #F6E5EE;
+  --off: #8E96A1;
+  --off-bg: #ECEEF1;
+  --today: #D79A1E;
+  --focus: #1E6E8A;
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14171C; --surface: #1D2129; --fg: #E7EAEF; --muted: #9AA3B1; --line: #2E343E;
+    --mia: #72C5DF; --mia-bg: #17333E; --gio: #E28FC1; --gio-bg: #3B1F31;
+    --off: #6C7482; --off-bg: #262B34; --today: #F0C45A; --focus: #72C5DF;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14171C; --surface: #1D2129; --fg: #E7EAEF; --muted: #9AA3B1; --line: #2E343E;
+  --mia: #72C5DF; --mia-bg: #17333E; --gio: #E28FC1; --gio-bg: #3B1F31;
+  --off: #6C7482; --off-bg: #262B34; --today: #F0C45A; --focus: #72C5DF;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+button, select, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.wrap { max-width: 760px; margin: 0 auto; display: grid; gap: 20px; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.status { color: var(--muted); font-size: 0.82rem; }
+
+.monthbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.monthbar .nav { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-size: 1.2rem; line-height: 1; }
+.monthbar select { height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); padding: 0 10px; font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; }
+.monthbar .today-btn { height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); padding: 0 14px; margin-left: auto; font-weight: 500; }
+
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 2px; border-top: 4px solid var(--line); }
+.tile.mia { border-top-color: var(--mia); }
+.tile.gio { border-top-color: var(--gio); }
+.tile.tot { border-top-color: var(--fg); }
+.tile .lbl { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+.tile .eur { font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.tile .sub { color: var(--muted); font-size: 0.86rem; font-variant-numeric: tabular-nums; }
+
+.cal { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 6px; }
+.dow, .week { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.dow span { text-align: center; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; padding: 4px 0; }
+.day { position: relative; min-height: 66px; border-radius: 10px; border: 1px solid var(--line); background: var(--off-bg); color: var(--fg); padding: 6px 7px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left; transition: transform 0.08s ease; }
+.day:active { transform: scale(0.97); }
+.day .num { font-weight: 600; font-size: 1rem; font-variant-numeric: tabular-nums; }
+.day .who { font-size: 0.78rem; font-weight: 600; line-height: 1.15; }
+.day .hrs { position: absolute; top: 6px; right: 7px; font-size: 0.78rem; font-variant-numeric: tabular-nums; color: var(--muted); }
+.day.mia { background: var(--mia-bg); border-color: color-mix(in srgb, var(--mia) 45%, transparent); }
+.day.mia .who, .day.mia .hrs { color: var(--mia); }
+.day.gio { background: var(--gio-bg); border-color: color-mix(in srgb, var(--gio) 45%, transparent); }
+.day.gio .who, .day.gio .hrs { color: var(--gio); }
+.day.no .who { color: var(--off); font-weight: 500; }
+.day.today { box-shadow: inset 0 0 0 2px var(--today); }
+.day.today .num::after { content: "oggi"; margin-left: 6px; font-size: 0.68rem; color: var(--today); text-transform: uppercase; letter-spacing: 0.06em; }
+.blank { min-height: 66px; border-radius: 10px; border: 1px dashed var(--line); opacity: 0.5; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.84rem; color: var(--muted); align-items: center; }
+.legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; border: 1px solid var(--line); }
+.legend .sw.mia { background: var(--mia-bg); border-color: var(--mia); }
+.legend .sw.gio { background: var(--gio-bg); border-color: var(--gio); }
+.legend .sw.no { background: var(--off-bg); }
+
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { height: 38px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-weight: 500; }
+.btn.warn { border-color: color-mix(in srgb, var(--today) 60%, transparent); }
+.toast { font-size: 0.84rem; color: var(--muted); align-self: center; }
+pre.riepilogo { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 0.9rem; white-space: pre-wrap; margin: 0; user-select: all; }
+
+details.settings { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 0 14px; }
+details.settings summary { cursor: pointer; padding: 12px 0; font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; }
+.set-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; padding: 4px 0 14px; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field label { font-size: 0.78rem; color: var(--muted); font-weight: 500; }
+.field input, .field select { height: 38px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); padding: 0 10px; width: 100%; font-variant-numeric: tabular-nums; }
+.sched { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; padding-bottom: 14px; }
+.sched .field label { text-align: center; }
+.set-note { color: var(--muted); font-size: 0.82rem; padding-bottom: 14px; margin: 0; }
+@media (prefers-reduced-motion: reduce) { .day { transition: none; } }
+@media (max-width: 420px) {
+  .day { min-height: 60px; padding: 5px 5px; }
+  .day .who { font-size: 0.72rem; }
+  .day .hrs { font-size: 0.72rem; }
+  .tile .eur { font-size: 1.5rem; }
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Ore Manu</h1>
+    <div class="status" id="status" aria-live="polite">Salvato su questo dispositivo</div>
+  </header>
+
+  <div class="monthbar" role="group" aria-label="Scelta del mese">
+    <button class="nav" id="prev" aria-label="Mese precedente">‹</button>
+    <select id="selMonth" aria-label="Mese"></select>
+    <select id="selYear" aria-label="Anno"></select>
+    <button class="nav" id="next" aria-label="Mese successivo">›</button>
+    <button class="today-btn" id="goToday">Oggi</button>
+  </div>
+
+  <section class="summary" aria-label="Riepilogo del mese">
+    <div class="tile mia">
+      <div class="lbl">Chiara</div>
+      <div class="eur" id="eurMia">0,00 €</div>
+      <div class="sub" id="subMia">0 giorni · 0 ore</div>
+    </div>
+    <div class="tile gio">
+      <div class="lbl">Giovanna</div>
+      <div class="eur" id="eurGio">0,00 €</div>
+      <div class="sub" id="subGio">0 giorni · 0 ore</div>
+    </div>
+    <div class="tile tot">
+      <div class="lbl">Totale da pagare</div>
+      <div class="eur" id="eurTot">0,00 €</div>
+      <div class="sub" id="subTot">0 giorni · 0 ore</div>
+    </div>
+  </section>
+
+  <section class="cal" aria-label="Calendario">
+    <div class="dow"><span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span></div>
+    <div id="weeks"></div>
+  </section>
+
+  <div class="legend">
+    <span>Tocca un giorno per cambiarlo:</span>
+    <span><i class="sw mia"></i>Chiara</span>
+    <span><i class="sw gio"></i>Giovanna</span>
+    <span><i class="sw no"></i>Non venuta</span>
+  </div>
+
+  <div class="actions">
+    <button class="btn" id="copy">Copia riepilogo</button>
+    <button class="btn warn" id="reset">Ripristina mese</button>
+    <span class="toast" id="toast"></span>
+  </div>
+  <pre class="riepilogo" id="riepilogo" hidden></pre>
+
+  <details class="settings">
+    <summary>Impostazioni</summary>
+    <div class="set-grid">
+      <div class="field"><label for="rateMia">Tariffa da Chiara (€/ora)</label><input type="number" id="rateMia" min="0" step="0.5" inputmode="decimal"></div>
+      <div class="field"><label for="rateGio">Tariffa da Giovanna (€/ora)</label><input type="number" id="rateGio" min="0" step="0.5" inputmode="decimal"></div>
+      <div class="field"><label for="hoursMia">Ore da Chiara</label><input type="number" id="hoursMia" min="0" step="0.5" inputmode="decimal"></div>
+      <div class="field"><label for="hoursMiaThu">Ore da Chiara il giovedì</label><input type="number" id="hoursMiaThu" min="0" step="0.5" inputmode="decimal"></div>
+      <div class="field"><label for="hoursGio">Ore da Giovanna</label><input type="number" id="hoursGio" min="0" step="0.5" inputmode="decimal"></div>
+    </div>
+    <p class="set-note">Schema settimanale predefinito, usato per precompilare i mesi che non hai ancora modificato.</p>
+    <div class="sched" id="sched"></div>
+    <p class="set-note">I mesi già modificati non cambiano quando aggiorni lo schema. Usa «Ripristina mese» per riapplicarlo a un mese.</p>
+  </details>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var MONTHS = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+  var DOWS = ['lunedì','martedì','mercoledì','giovedì','venerdì','sabato','domenica'];
+  var DOW_SHORT = ['Lun','Mar','Mer','Gio','Ven'];
+  var LABEL = { mia: 'Chiara', gio: 'Giovanna', no: 'Non venuta' };
+  var CYCLE = { mia: 'gio', gio: 'no', no: 'mia' };
+  var DEFAULT_SETTINGS = { rateMia: 13, rateGio: 12, hoursMia: 2, hoursMiaThu: 3, hoursGio: 2, schedule: ['gio','mia','gio','mia','gio'] };
+  var LS_KEY = 'oreManu.v1';
+
+  var state = { settings: clone(DEFAULT_SETTINGS), months: {} };
+  var now = new Date();
+  var view = { y: now.getFullYear(), m: now.getMonth() };
+  var db = null, unsubMonth = null, loadTimer = null, resetArmed = null;
+  var writeQ = {};
+
+  var $ = function (id) { return document.getElementById(id); };
+  var eur = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' });
+  var num = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 2 });
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function monthKey(y, m) { return y + '-' + pad(m + 1); }
+  function dateKey(y, m, d) { return monthKey(y, m) + '-' + pad(d); }
+  function dow(y, m, d) { return (new Date(y, m, d).getDay() + 6) % 7; }
+  function daysIn(y, m) { return new Date(y, m + 1, 0).getDate(); }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  function normSettings(s) {
+    var out = clone(DEFAULT_SETTINGS);
+    if (!s || typeof s !== 'object') return out;
+    ['rateMia','rateGio','hoursMia','hoursMiaThu','hoursGio'].forEach(function (k) {
+      var v = Number(s[k]); if (isFinite(v) && v >= 0) out[k] = v;
+    });
+    if (Array.isArray(s.schedule) && s.schedule.length === 5) {
+      out.schedule = s.schedule.map(function (v) { return LABEL[v] ? v : 'no'; });
+    }
+    return out;
+  }
+
+  /* ---------- Archiviazione locale ---------- */
+  function lsLoad() {
+    try {
+      var raw = localStorage.getItem(LS_KEY);
+      if (!raw) return;
+      var o = JSON.parse(raw);
+      if (o && typeof o === 'object') {
+        state.settings = normSettings(o.settings);
+        state.months = (o.months && typeof o.months === 'object') ? o.months : {};
+      }
+    } catch (e) { /* storage non disponibile: si parte vuoti */ }
+  }
+  function lsSave() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { /* ignora */ } }
+
+  /* ---------- Modello ---------- */
+  function buildDefaultMonth(y, m) {
+    var days = {}, n = daysIn(y, m);
+    for (var d = 1; d <= n; d++) {
+      var w = dow(y, m, d);
+      if (w <= 4) days[dateKey(y, m, d)] = state.settings.schedule[w] || 'no';
+    }
+    return { days: days };
+  }
+  function isStored(y, m) { var r = state.months[monthKey(y, m)]; return !!(r && r.days); }
+  function getMonth(y, m) { return isStored(y, m) ? state.months[monthKey(y, m)] : buildDefaultMonth(y, m); }
+  function hoursFor(y, m, d, v) {
+    var s = state.settings;
+    if (v === 'mia') return dow(y, m, d) === 3 ? s.hoursMiaThu : s.hoursMia;
+    if (v === 'gio') return s.hoursGio;
+    return 0;
+  }
+  function totals(y, m) {
+    var rec = getMonth(y, m), s = state.settings, n = daysIn(y, m);
+    var t = { mia: { days: 0, hours: 0, eur: 0 }, gio: { days: 0, hours: 0, eur: 0 } };
+    for (var d = 1; d <= n; d++) {
+      if (dow(y, m, d) > 4) continue;
+      var v = rec.days[dateKey(y, m, d)] || 'no';
+      if (v === 'mia' || v === 'gio') {
+        var h = hoursFor(y, m, d, v);
+        t[v].days++; t[v].hours += h; t[v].eur += h * (v === 'mia' ? s.rateMia : s.rateGio);
+      }
+    }
+    t.tot = { days: t.mia.days + t.gio.days, hours: t.mia.hours + t.gio.hours, eur: t.mia.eur + t.gio.eur };
+    return t;
+  }
+  function riepilogoText(y, m) {
+    var t = totals(y, m);
+    function row(name, r) { return name + ': ' + r.days + ' giorni, ' + num.format(r.hours) + ' ore = ' + eur.format(r.eur); }
+    return cap(MONTHS[m]) + ' ' + y + ' - Manu\n' + row('Chiara', t.mia) + '\n' + row('Giovanna', t.gio) + '\n' + row('Totale', t.tot);
+  }
+
+  /* ---------- Rendering ---------- */
+  function renderSummary() {
+    var t = totals(view.y, view.m);
+    function sub(r) { return r.days + (r.days === 1 ? ' giorno' : ' giorni') + ' · ' + num.format(r.hours) + ' ore'; }
+    $('eurMia').textContent = eur.format(t.mia.eur); $('subMia').textContent = sub(t.mia);
+    $('eurGio').textContent = eur.format(t.gio.eur); $('subGio').textContent = sub(t.gio);
+    $('eurTot').textContent = eur.format(t.tot.eur); $('subTot').textContent = sub(t.tot);
+  }
+  function renderCalendar() {
+    var y = view.y, m = view.m, rec = getMonth(y, m), n = daysIn(y, m);
+    var today = new Date(), isCur = today.getFullYear() === y && today.getMonth() === m;
+    var html = '', week = '', col = 0, first = dow(y, m, 1);
+    var startCol = first > 4 ? 0 : first;
+    for (var i = 0; i < startCol; i++) { week += '<div class="blank" aria-hidden="true"></div>'; col++; }
+    if (first > 4) { /* il mese inizia nel weekend: la prima riga parte dal lunedì seguente */ }
+    for (var d = 1; d <= n; d++) {
+      var w = dow(y, m, d);
+      if (w > 4) continue;
+      if (col === 5) { html += '<div class="week">' + week + '</div>'; week = ''; col = 0; }
+      var v = rec.days[dateKey(y, m, d)] || 'no';
+      var h = hoursFor(y, m, d, v);
+      var cls = 'day ' + v + (isCur && today.getDate() === d ? ' today' : '');
+      var aria = DOWS[w] + ' ' + d + ' ' + MONTHS[m] + ': ' + LABEL[v] + (h ? ', ' + num.format(h) + ' ore' : '') + '. Tocca per cambiare';
+      week += '<button class="' + cls + '" data-d="' + d + '" aria-label="' + aria + '">' +
+        '<span class="num">' + d + '</span>' +
+        (h ? '<span class="hrs">' + num.format(h) + ' h</span>' : '') +
+        '<span class="who">' + LABEL[v] + '</span></button>';
+      col++;
+    }
+    while (col > 0 && col < 5) { week += '<div class="blank" aria-hidden="true"></div>'; col++; }
+    if (week) html += '<div class="week">' + week + '</div>';
+    $('weeks').innerHTML = html;
+  }
+  function renderMonthBar() {
+    $('selMonth').value = String(view.m);
+    var sy = $('selYear');
+    if (![].some.call(sy.options, function (o) { return o.value === String(view.y); })) fillYears();
+    sy.value = String(view.y);
+  }
+  function renderSettings() {
+    var s = state.settings;
+    ['rateMia','rateGio','hoursMia','hoursMiaThu','hoursGio'].forEach(function (k) { if (document.activeElement !== $(k)) $(k).value = s[k]; });
+    for (var i = 0; i < 5; i++) { var el = $('sched' + i); if (el && document.activeElement !== el) el.value = s.schedule[i]; }
+  }
+  function render() { renderMonthBar(); renderSummary(); renderCalendar(); renderSettings(); $('riepilogo').hidden = true; }
+
+  function fillYears() {
+    var sy = $('selYear'), base = now.getFullYear();
+    var lo = Math.min(base - 3, view.y), hi = Math.max(base + 2, view.y);
+    sy.innerHTML = '';
+    for (var y = lo; y <= hi; y++) { var o = document.createElement('option'); o.value = y; o.textContent = y; sy.appendChild(o); }
+  }
+
+  /* ---------- Azioni ---------- */
+  function setStatus(t) { $('status').textContent = t; }
+  function toast(t) {
+    var el = $('toast'); el.textContent = t;
+    clearTimeout(toast.t); toast.t = setTimeout(function () { el.textContent = ''; }, 3000);
+  }
+  function setView(y, m) {
+    if (m < 0) { m = 11; y--; } if (m > 11) { m = 0; y++; }
+    view = { y: y, m: m };
+    render();
+    subscribeMonth();
+  }
+  function ensureStored(y, m) {
+    var k = monthKey(y, m);
+    if (!isStored(y, m)) state.months[k] = buildDefaultMonth(y, m);
+    return state.months[k];
+  }
+  function toggleDay(d) {
+    var y = view.y, m = view.m, rec = ensureStored(y, m), k = dateKey(y, m, d);
+    rec.days[k] = CYCLE[rec.days[k] || 'no'];
+    rec.updated = new Date().toISOString();
+    persistMonth(y, m);
+    render();
+  }
+  function persistMonth(y, m) {
+    lsSave();
+    if (db) dbWrite('months/' + monthKey(y, m), state.months[monthKey(y, m)]);
+    else setStatus('Salvato su questo dispositivo');
+  }
+  function persistSettings() {
+    lsSave();
+    if (db) dbWrite('settings/main', state.settings);
+  }
+  function resetMonth() {
+    var k = monthKey(view.y, view.m);
+    delete state.months[k];
+    lsSave();
+    if (db) dbDelete('months/' + k);
+    render();
+    toast('Mese riportato allo schema predefinito');
+  }
+
+  /* ---------- Sincronizzazione (db, quando disponibile) ---------- */
+  function dbWrite(path, data) {
+    var q = writeQ[path] || (writeQ[path] = { chain: Promise.resolve(), timer: null, data: null });
+    q.data = clone(data);
+    clearTimeout(q.timer);
+    q.timer = setTimeout(function () {
+      var d = q.data; q.data = null;
+      setStatus('Salvataggio…');
+      q.chain = q.chain.then(function () { return db.doc(path).set(d); })
+        .then(function () { if (!q.data) setStatus('Sincronizzato con il tuo account'); })
+        .catch(function (e) { setStatus('Salvato solo su questo dispositivo (sincronizzazione non riuscita)'); console.warn(e); });
+    }, 350);
+  }
+  function dbDelete(path) {
+    var q = writeQ[path] || (writeQ[path] = { chain: Promise.resolve(), timer: null, data: null });
+    clearTimeout(q.timer); q.data = null;
+    q.chain = q.chain.then(function () { return db.doc(path).delete(); })
+      .then(function () { setStatus('Sincronizzato con il tuo account'); })
+      .catch(function (e) { setStatus('Salvato solo su questo dispositivo (sincronizzazione non riuscita)'); console.warn(e); });
+  }
+  function subscribeMonth() {
+    if (!db) return;
+    if (unsubMonth) { unsubMonth(); unsubMonth = null; }
+    var y = view.y, m = view.m, k = monthKey(y, m);
+    clearTimeout(loadTimer);
+    loadTimer = setTimeout(function () { setStatus('Dati sincronizzati non raggiungibili: mostro la copia locale'); }, 10000);
+    unsubMonth = db.doc('months/' + k).onSnapshot(function (snap) {
+      if (!snap.metadata.fromCache) { clearTimeout(loadTimer); setStatus('Sincronizzato con il tuo account'); }
+      if (snap.exists) {
+        var data = snap.data();
+        if (data && data.days && typeof data.days === 'object') {
+          var mine = state.months[k];
+          var pending = writeQ['months/' + k] && writeQ['months/' + k].data;
+          if (!pending && JSON.stringify(mine) !== JSON.stringify(data)) {
+            state.months[k] = clone(data); lsSave();
+            if (view.y === y && view.m === m) render();
+          }
+        }
+      } else if (!snap.metadata.fromCache && isStored(y, m)) {
+        dbWrite('months/' + k, state.months[k]);
+      }
+    }, function (e) { clearTimeout(loadTimer); setStatus('Sincronizzazione non disponibile: uso la copia locale'); console.warn(e); });
+  }
+  function subscribeSettings() {
+    db.doc('settings/main').onSnapshot(function (snap) {
+      if (snap.exists) {
+        var s = normSettings(snap.data());
+        var pending = writeQ['settings/main'] && writeQ['settings/main'].data;
+        if (!pending && JSON.stringify(s) !== JSON.stringify(state.settings)) { state.settings = s; lsSave(); render(); }
+      } else if (!snap.metadata.fromCache && JSON.stringify(state.settings) !== JSON.stringify(DEFAULT_SETTINGS)) {
+        dbWrite('settings/main', state.settings);
+      }
+    }, function (e) { console.warn(e); });
+  }
+  function initDb() {
+    if (!(window.claude && typeof window.claude.use === 'function')) return;
+    window.claude.use('db').then(function (ns) {
+      if (!ns) return;
+      db = ns;
+      subscribeSettings();
+      subscribeMonth();
+    }).catch(function () { db = null; });
+  }
+
+  /* ---------- Avvio ---------- */
+  function buildControls() {
+    var sm = $('selMonth');
+    MONTHS.forEach(function (n, i) { var o = document.createElement('option'); o.value = i; o.textContent = cap(n); sm.appendChild(o); });
+    fillYears();
+    var sc = $('sched');
+    for (var i = 0; i < 5; i++) {
+      sc.insertAdjacentHTML('beforeend',
+        '<div class="field"><label for="sched' + i + '">' + DOW_SHORT[i] + '</label>' +
+        '<select id="sched' + i + '"><option value="mia">Chiara</option><option value="gio">Giovanna</option><option value="no">Nessuno</option></select></div>');
+    }
+  }
+  function bind() {
+    $('prev').addEventListener('click', function () { setView(view.y, view.m - 1); });
+    $('next').addEventListener('click', function () { setView(view.y, view.m + 1); });
+    $('goToday').addEventListener('click', function () { var t = new Date(); setView(t.getFullYear(), t.getMonth()); });
+    $('selMonth').addEventListener('change', function (e) { setView(view.y, Number(e.target.value)); });
+    $('selYear').addEventListener('change', function (e) { setView(Number(e.target.value), view.m); });
+    $('weeks').addEventListener('click', function (e) {
+      var b = e.target.closest('button.day'); if (!b) return;
+      toggleDay(Number(b.getAttribute('data-d')));
+    });
+    $('copy').addEventListener('click', function () {
+      var txt = riepilogoText(view.y, view.m);
+      var pre = $('riepilogo'); pre.textContent = txt; pre.hidden = false;
+      var done = function () { toast('Riepilogo copiato'); };
+      var fail = function () { toast('Copia non consentita: seleziona il testo qui sotto'); try { getSelection().selectAllChildren(pre); } catch (err) {} };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, fail); else fail();
+    });
+    $('reset').addEventListener('click', function () {
+      var b = $('reset');
+      if (resetArmed) { clearTimeout(resetArmed); resetArmed = null; b.textContent = 'Ripristina mese'; resetMonth(); return; }
+      b.textContent = 'Confermi il ripristino?';
+      resetArmed = setTimeout(function () { resetArmed = null; b.textContent = 'Ripristina mese'; }, 4000);
+    });
+    ['rateMia','rateGio','hoursMia','hoursMiaThu','hoursGio'].forEach(function (k) {
+      $(k).addEventListener('change', function (e) {
+        var v = Number(e.target.value);
+        if (!isFinite(v) || v < 0) { e.target.value = state.settings[k]; return; }
+        state.settings[k] = v; persistSettings(); render();
+      });
+    });
+    for (var i = 0; i < 5; i++) (function (i) {
+      $('sched' + i).addEventListener('change', function (e) {
+        state.settings.schedule[i] = e.target.value; persistSettings(); render();
+      });
+    })(i);
+  }
+
+  lsLoad();
+  buildControls();
+  bind();
+  render();
+  initDb();
+})();
+</script>
+</body>
+</html>
